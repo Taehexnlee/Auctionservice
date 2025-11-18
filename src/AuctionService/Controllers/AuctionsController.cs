@@ -3,6 +3,9 @@ using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Contracts;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,20 +16,25 @@ public class AuctionsController : ControllerBase
 {
     private readonly AuctionDbContext _context;
     private readonly IMapper _mapper;
-    public AuctionsController(AuctionDbContext context, IMapper mapper)
+    private readonly IPublishEndpoint _publishEndpoint;
+    public AuctionsController(AuctionDbContext context, IMapper mapper, IPublishEndpoint publishEndpoint)
     {
         _context = context;
         _mapper = mapper;
+        _publishEndpoint = publishEndpoint;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<AuctionDtos>>> GetAllAuctions()
+    public async Task<ActionResult<List<AuctionDtos>>> GetAllAuctions(string date)
     {
-        var auctions = await _context.Auctions
-            .Include(x => x.Item)
+        var query = _context.Auctions
             .OrderBy(x => x.Item.Make)
-            .ToListAsync();
-        return _mapper.Map<List<AuctionDtos>>(auctions);
+            .AsQueryable();
+        if (!string.IsNullOrEmpty(date))
+        {
+            query = query.Where(x => x.UpdatedAt.CompareTo(DateTime.Parse(date).ToUniversalTime())>0);
+        }
+        return await query.ProjectTo<AuctionDtos>(_mapper.ConfigurationProvider).ToListAsync();
     }
 
     [HttpGet("{id}")]
@@ -47,8 +55,15 @@ public class AuctionsController : ControllerBase
         var auction = _mapper.Map<Auction>(auctionDto);
         auction.Seller = "test";
         _context.Auctions.Add(auction);
+        
+        var newAuction = _mapper.Map<AuctionDtos>(auction);
+
+        await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
 
         var result = await _context.SaveChangesAsync() > 0;
+
+       
+        
         if (!result)
         {
             return BadRequest("Failed to create auction");
@@ -71,7 +86,10 @@ public class AuctionsController : ControllerBase
         auction.Item.Mileage = updateAuctionDto.Mileage ?? auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
 
+        await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
         var result = await _context.SaveChangesAsync() > 0;
+
         if(result) return Ok();
 
         return BadRequest("Failed to update auction");
@@ -85,6 +103,9 @@ public class AuctionsController : ControllerBase
             return NotFound();
         }
         _context.Auctions.Remove(auction);
+
+        await _publishEndpoint.Publish<AuctionDeleted>(new {Id = auction.Id.ToString()}); 
+
         var result = await _context.SaveChangesAsync() > 0;
         if (!result) return BadRequest("Failed to delete auction");
 
