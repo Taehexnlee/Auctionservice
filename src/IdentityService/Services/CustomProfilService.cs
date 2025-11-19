@@ -3,7 +3,7 @@ using Duende.IdentityModel;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Microsoft.AspNetCore.Identity;
-using IdentityService.Models; // ← ApplicationUser 네임스페이스 (프로젝트에 맞게)
+using IdentityService.Models;
 
 namespace IdentityService.Services;
 
@@ -37,7 +37,6 @@ public class CustomProfilService : IProfileService
 
     public Task IsActiveAsync(IsActiveContext context)
     {
-        // 필요하면 여기서 user 활성/비활성 체크
         context.IsActive = true;
         return Task.CompletedTask;
     }

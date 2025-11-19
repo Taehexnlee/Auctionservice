@@ -45,10 +45,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters.ValidateAudience = false;
         options.TokenValidationParameters.NameClaimType = "username";
     });
+builder.Services.AddAuthorization();
 var app = builder.Build();
 
-app.UseAuthorization();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
