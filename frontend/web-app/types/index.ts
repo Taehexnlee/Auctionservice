@@ -4,7 +4,7 @@ export type PageResult<T> = {
     totalCount: number;
 };
 export interface Auction {
-  reservePrice?: number
+  reservePrice: number
   seller: string
   winner?: any
   soldAmount?: number

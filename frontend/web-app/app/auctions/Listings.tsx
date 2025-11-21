@@ -18,7 +18,9 @@ export default function Listings() {
     pageSize: state.pageSize,
     searchTerm: state.searchTerm,
     orderBy: state.orderBy,
-    filterBy: state.filterBy
+    filterBy: state.filterBy,
+    seller: state.seller,
+    winner: state.winner
   })));
 
   const setParams = useParamsStore(state => state.setParams);
@@ -52,7 +54,7 @@ export default function Listings() {
           <div className="flex justify-center mt-4">
             <AppPagination pageChanged={setPageNumber}
               currentPage={params.pageNumber} pageCount={data.pageCount} />
-          </div> 
+          </div>
         </>
       )}
 
