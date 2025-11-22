@@ -22,15 +22,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             NameClaimType = "username"
         };
     });
-builder.Services.AddAuthorization(options =>
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AuctionScopePolicy", policy =>
+    options.AddPolicy("customPolicy", b =>
+    {
+        b.AllowAnyHeader()
+         .AllowAnyMethod()
+         .AllowCredentials()
+         .WithOrigins(
+           builder.Configuration["ClientApp"]
+         );
+    });
+});
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("AuctionScopePolicy", policy =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireClaim("scope", "auctionApp");
     });
-});
 var app = builder.Build();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
