@@ -3,16 +3,16 @@ import AuctionCard from "./AuctionCard";
 import AppPagination from "@/app/components/AppPagination";
 import { getData } from "@/app/actions/actionAution";
 import { useEffect, useState } from "react";
-import { Auction, PageResult } from "@/types";
 import Filter from "@/app/actions/Filter";
 import { useParamsStore } from "@/hooks/useParamsStore";
 import { useShallow } from "zustand/shallow";
 import qs from "query-string"
 import EmptyFilter from "../components/EmptyFilter";
+import { useAuctionStore } from "@/hooks/useAuctionStore";
 
 
 export default function Listings() {
-  const [data, setData] = useState<PageResult<Auction>>();
+  const [loading, setLoading] = useState(true);
   const params = useParamsStore(useShallow(state => ({
     pageNumber: state.pageNumber,
     pageSize: state.pageSize,
@@ -22,6 +22,14 @@ export default function Listings() {
     seller: state.seller,
     winner: state.winner
   })));
+
+  const data = useAuctionStore(useShallow(state => ({
+    auction: state.auction,
+    totalCount: state.totalCount,
+    pageCount: state.pageCount
+  })));
+
+  const setData = useAuctionStore(state => state.setData);
 
   const setParams = useParamsStore(state => state.setParams);
 
@@ -33,12 +41,13 @@ export default function Listings() {
 
   useEffect(() => {
     getData(url).then(data => {
-      setData(data)
+      setData(data);
+      setLoading(false)
     }
     )
-  }, [url]);
+  }, [url, setData]);
 
-  if (!data) return <h3>Loading...</h3>
+  if (loading) return <h3>Loading...</h3>
   return (
     <>
       <Filter />
@@ -47,7 +56,7 @@ export default function Listings() {
       ) : (
         <>
           <div className="grid grid-cols-4 gap-6">
-            {data && data.results.map((auction) => (
+            {data && data.auction.map((auction) => (
               <AuctionCard key={auction.id} auction={auction} />
             ))}
           </div>

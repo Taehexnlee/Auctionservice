@@ -4,7 +4,8 @@ const baseUrl = 'http://localhost:6001/';
 async function get(url: string) {
     const requestOptions = {
         method: 'GET',
-        headers: await getHeaders()
+        headers: await getHeaders(),
+        cache: 'no-store' as const
     };
     const response = await fetch(baseUrl + url, requestOptions);
     return handelResponse(response);
@@ -41,7 +42,14 @@ async function del(url: string) {
 
 async function handelResponse(response: Response) {
    const text = await response.text();
-   const data = text && JSON.parse(text);
+
+   let data: unknown;
+   try {
+    data = text ? JSON.parse(text) : null;
+   } catch {
+        data = text;
+   }
+
    if(response.ok) {
     return data || response.statusText;
    }
@@ -49,18 +57,22 @@ async function handelResponse(response: Response) {
    {
     const error = {
         status : response.status,
-        message: response.statusText
+        message: typeof data === 'string'
+            ? data
+            : (data as { message?: string } | null)?.message || response.statusText
     }
     return {error}
    }
 }
 
 async function getHeaders() : Promise<Headers> {
-    const session = await auth();
+    const session = typeof window === 'undefined'
+        ? await auth()
+        : await (await import('next-auth/react')).getSession();
     const headers = new Headers();
 
     headers.set('Content-Type', 'application/json');
-    if(session) {
+    if(session?.accessToken) {
         headers.set('Authorization', 'Bearer ' + session.accessToken);
     }
     return headers;

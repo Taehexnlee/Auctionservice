@@ -31,26 +31,26 @@ export default function AuctionFrom({ auction }: Props) {
     async function onSubmit(data: FieldValues) {
         try {
             let id = '';
-            let res;
+            let res: Awaited<ReturnType<typeof createAuction>> | Awaited<ReturnType<typeof updateAuction>> | undefined;
 
             if (pathname === '/auctions/create') {
                 res = await createAuction(data);
-                id = res.id;
-            }
-            else {
-                if (auction) {
-                    res = await updateAuction(data, auction.id);
-                    id = auction.id;
+                if (res && 'id' in res) {
+                    id = (res as Auction).id;
                 }
             }
-
-
-            if (res.error) {
-                throw res.error
+            else if (auction) {
+                res = await updateAuction(data, auction.id);
+                id = auction.id;
             }
+
+            if (res && 'error' in res && res.error) {
+                throw res.error;
+            }
+
             router.push(`/auctions/details/${id}`)
         } catch (error: any) {
-            toast.error(error.status + '' + error.message)
+            toast.error(`${error.status ?? ''} ${error.message ?? 'Something went wrong'}`.trim());
         }
     }
     return (

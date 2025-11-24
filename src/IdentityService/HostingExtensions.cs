@@ -66,9 +66,16 @@ internal static class HostingExtensions
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
 
-                if(builder.Environment.IsEnvironment("Docker"))
+                var issuerUri = builder.Configuration["IssuerUri"];
+
+                if (!string.IsNullOrWhiteSpace(issuerUri))
                 {
-                    options.IssuerUri = "http://localhost:5001";
+                    options.IssuerUri = issuerUri;
+                }
+                else if (builder.Environment.IsEnvironment("Docker"))
+                {
+                    // Use the service hostname when running in containers so downstream services can resolve discovery endpoints
+                    options.IssuerUri = "http://identity-svc";
                 }
                 
             })

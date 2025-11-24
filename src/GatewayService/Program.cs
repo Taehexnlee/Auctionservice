@@ -17,7 +17,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateAudience = false,
 
-            ValidIssuer = "http://localhost:5001",
+            ValidIssuer = builder.Configuration["IdentityServiceUrl"],
 
             NameClaimType = "username"
         };
@@ -42,7 +42,7 @@ builder.Services.AddAuthorizationBuilder()
     });
 var app = builder.Build();
 
-app.UseCors();
+app.UseCors("customPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

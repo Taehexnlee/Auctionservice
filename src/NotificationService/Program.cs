@@ -22,8 +22,6 @@ builder.Services.AddMassTransit(x =>
 
 builder.Services.AddSignalR();
 
-builder.WebHost.UseUrls("http://0.0.0.0:7004", "http://localhost:7004");
-
 
 var app = builder.Build();
 
