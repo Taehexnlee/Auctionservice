@@ -65,23 +65,12 @@ internal static class HostingExtensions
                 options.Events.RaiseInformationEvents = true;
                 options.Events.RaiseFailureEvents = true;
                 options.Events.RaiseSuccessEvents = true;
-
-                var issuerUri = builder.Configuration["IssuerUri"];
-
-                if (!string.IsNullOrWhiteSpace(issuerUri))
-                {
-                    options.IssuerUri = issuerUri;
-                }
-                else if (builder.Environment.IsEnvironment("Docker"))
-                {
-                    // Use the service hostname when running in containers so downstream services can resolve discovery endpoints
-                    options.IssuerUri = "http://identity-svc";
-                }
+                options.IssuerUri = builder.Configuration["IssuerUri"];
                 
             })
             .AddInMemoryIdentityResources(Config.IdentityResources)
             .AddInMemoryApiScopes(Config.ApiScopes)
-            .AddInMemoryClients(Config.Clients)
+            .AddInMemoryClients(Config.Clients(builder.Configuration))
             .AddAspNetIdentity<ApplicationUser>()
             .AddProfileService<CustomProfilService>();
 

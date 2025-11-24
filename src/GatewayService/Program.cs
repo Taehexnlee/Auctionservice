@@ -4,20 +4,23 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var authority = builder.Configuration["IdentityServiceUrl"]; // internal http endpoint
+var issuer = builder.Configuration["IdentityIssuer"] ?? authority; // external issuer used in tokens
+
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = builder.Configuration["IdentityServiceUrl"]; // http://identity-svc
+        options.Authority = authority;
         options.RequireHttpsMetadata = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false,
 
-            ValidIssuer = builder.Configuration["IdentityServiceUrl"],
+            ValidIssuer = issuer,
 
             NameClaimType = "username"
         };
